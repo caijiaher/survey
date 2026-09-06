@@ -1,6 +1,7 @@
 import React, {useMemo, useState} from 'react'
 import {createRoot} from 'react-dom/client'
 import './styles.css'
+import {supabase} from './lib/supabase'
 
 const scale = ['非常不同意','不同意','一般','同意','非常同意']
 const importanceGroups = [
@@ -17,7 +18,18 @@ function App(){
  const [submitted,setSubmitted]=useState(false)
  const set=(k,v)=>setData(d=>({...d,[k]:v})); const toggle=(group,v)=>setData(d=>({...d,[group]:((d[group]||[]).includes(v)?d[group].filter(x=>x!==v):[...(d[group]||[]),v])}));
  const updateRole=(i,k,v)=>setData(d=>({...d,roles:d.roles.map((r,j)=>j===i?{...r,[k]:v}:r)}))
- const submit=e=>{e.preventDefault();setSubmitted(true);window.scrollTo({top:0,behavior:'smooth'})}
+ const submit=async e=>{
+  e.preventDefault()
+  if(!supabase){window.alert('问卷暂未配置数据库连接，请联系调查发起人。');return}
+  const {error}=await supabase.from('survey_responses').insert({
+   age:data.age,gender:data.gender,school:data.school,degree:data.degree,year:data.year,major:data.major,
+   favorite_status:data.fav,favorite_roles:data.roles,role_reasons:data.roleReasons||[],role_follow:data.roleFollow,role_buy:data.roleBuy,role_actions:data.roleActions||[],
+   fan_watch:data.watch,fan_types:data.fanTypes||[],fan_frequency:data.watchFreq,fan_platforms:data.platforms||[],fan_reasons:data.watchReasons||[],fan_interactions:data.interactions||[],
+   create_status:data.create,create_types:data.createTypes||[],create_motivations:data.motivations||[],importance_scores:data.importance,important_text:data.importantText,keep_content:data.keep
+  })
+  if(error){window.alert('提交失败，请稍后重试。');return}
+  setSubmitted(true);window.scrollTo({top:0,behavior:'smooth'})
+ }
  if(submitted)return <main className="survey-shell"><div className="success"><span className="eyebrow">调查已提交</span><h1>感谢你的参与。</h1><p>你的回答将以匿名形式用于大学生二次元群体相关议题的社会调研。</p><button className="primary" onClick={()=>setSubmitted(false)}>返回查看问卷</button></div></main>
  return <main className="survey-shell"><header className="survey-header"><div><span className="eyebrow">FIELD STUDY / 2026</span><h1>大学生二次元生活与社群调查</h1><p>面向中国大陆高校在校生的匿名社会调查，预计用时10—15分钟。</p></div><div className="badge">ANONYMOUS<br/>RESEARCH</div></header><form onSubmit={submit}>
  <Section title="一、筛选与基本信息"><Radio label="1. 你是否为中国大陆高校在校学生？" value={data.student} onChange={v=>set('student',v)} options={['是','否']} required/><Radio label="2. 你的年龄" value={data.age} onChange={v=>set('age',v)} options={['18岁','19岁','20岁','21岁','22岁','23岁','24—30岁']} required/><Radio label="3. 你是否愿意匿名参加本调查？" value={data.consent} onChange={v=>set('consent',v)} options={['愿意','不愿意']} required/><Radio label="4. 你的性别" value={data.gender} onChange={v=>set('gender',v)} options={['男','女','非二元或其他','不便回答']}/><Radio label="5. 学校类型" value={data.school} onChange={v=>set('school',v)} options={['高职高专','普通本科','重点本科或“双一流”高校','民办本科','其他']}/><Radio label="6. 当前学历" value={data.degree} onChange={v=>set('degree',v)} options={['专科','本科','硕士研究生','博士研究生','其他']}/><Radio label="7. 当前年级" value={data.year} onChange={v=>set('year',v)} options={['大一','大二','大三','大四或大五','研一','研二及以上']}/><Input label="8. 所学专业" value={data.major} onChange={v=>set('major',v)} placeholder="例如：计算机科学与技术"/></Section>
