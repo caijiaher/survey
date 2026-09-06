@@ -24,8 +24,13 @@ create table if not exists public.survey_responses (
   create_motivations jsonb not null default '[]'::jsonb,
   importance_scores jsonb not null default '{}'::jsonb,
   important_text text,
-  keep_content text
+  keep_content text,
+  community_question text,
+  community_answer text
 );
+
+alter table public.survey_responses add column if not exists community_question text;
+alter table public.survey_responses add column if not exists community_answer text;
 
 alter table public.survey_responses enable row level security;
 
